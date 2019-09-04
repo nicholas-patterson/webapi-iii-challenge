@@ -15,21 +15,62 @@ router.get("/:id", validatePostId, (req, res) => {
   });
 });
 
-router.delete("/:id", (req, res) => {});
+router.delete("/:id", validatePostId, (req, res) => {
+  const id = req.params.id;
+  db.remove(id)
+    .then(resource => {
+      res.status(202).json(resource);
+    })
+    .catch(err => {
+      res.status(500).json({ err: "Server Error" });
+    });
+});
 
-router.put("/:id", (req, res) => {});
+router.put("/:id", validatePostId, validatePost, (req, res) => {
+  const id = req.params.id;
+  const body = req.body;
+
+  db.update(id, body)
+    .then(result => {
+      if (result) {
+        res.status(200).json({ message: "Post updated successfully" });
+      } else {
+        res.status(400).json({ message: "Post not updated" });
+      }
+    })
+    .catch(err => {
+      res.status(500).json({ error: "Server Error" });
+    });
+});
 
 // custom middleware
 
 function validatePostId(req, res, next) {
   const id = req.params.id;
-  if (id) {
-    console.log(id);
-    req.user = id;
+  db.getById(id)
+    .then(post => {
+      if (post) {
+        req.post = post;
+        next();
+      } else {
+        res.status(404).json({ message: "Post with that ID is was not found" });
+      }
+    })
+    .catch(err => {
+      res.status(500).json({ error: "Server Error" });
+    });
+}
+
+function validatePost(req, res, next) {
+  const body = Object.keys(req.body);
+  const text = req.body.text;
+  if (body.length === 0) {
+    res.status(400).json({ message: "missing post data" });
+  } else if (!text) {
+    res.status(400).json({ message: "missing required text field" });
   } else {
-    res.status(400).json({ message: "Invalid User ID" });
+    next();
   }
-  next();
 }
 
 module.exports = router;
