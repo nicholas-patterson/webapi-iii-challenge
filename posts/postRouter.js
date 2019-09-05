@@ -9,10 +9,7 @@ router.get("/", (req, res) => {
 });
 
 router.get("/:id", validatePostId, (req, res) => {
-  const id = req.params.id;
-  db.getById(id).then(resource => {
-    res.status(200).json(resource);
-  });
+  res.status(200).json(req.user);
 });
 
 router.delete("/:id", validatePostId, (req, res) => {
